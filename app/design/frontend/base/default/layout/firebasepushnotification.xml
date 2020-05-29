@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout version="0.0.1">
+    <default>
+        <reference name="head">
+            <action method="addJs">
+                <script>tiendamia/firebasepushnotification/notification-worker.js</script>
+            </action>
+        </reference>
+        <reference name="footer">
+            <block type="tiendamia_firebasepushnotification/pushnotification" name="firebasepushnotification" template="firebasepushnotification/firebasepushnotification.phtml" />
+        </reference>
+    </default>
+</layout>

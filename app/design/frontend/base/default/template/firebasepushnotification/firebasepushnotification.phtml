@@ -1,0 +1,100 @@
+<script src="https://www.gstatic.com/firebasejs/7.14.5/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-messaging.js"></script>
+
+<script>
+    let firebaseConfig = {
+        apiKey: "AIzaSyBD-fJxfeUNpLnRjZQ4-J6_MI9LPUrN6dM",
+        authDomain: "tiendamiamagento.firebaseapp.com",
+        databaseURL: "https://tiendamiamagento.firebaseio.com",
+        projectId: "tiendamiamagento",
+        storageBucket: "tiendamiamagento.appspot.com",
+        messagingSenderId: "161304896690",
+        appId: "1:161304896690:web:bbb5a3866ce55394dd15ab"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    const messaging = firebase.messaging();
+    messaging.usePublicVapidKey('AAAAJY6FZLI:APA91bGlwXTxYlTRX01hQvzSf4BNoa0qYjinBxhL9kwYdBSYmyOmXPx1glP8XgkkgZp3LdhAwzblyhxjhBoNpDQ_GxMnmBx4lHw0xXVYk2ii9Mh9n9s_F2L4kZ-jZTpw-YAIS6GGC7Jg');
+
+    messaging.onTokenRefresh(() => {
+        messaging.getToken().then((refreshedToken) => {
+            console.log('Token refreshed.');
+            setTokenSentToServer(false);
+            sendTokenToServer(refreshedToken);
+        }).catch((err) => {
+            console.log('Unable to retrieve refreshed token ', err);
+        });
+    });
+
+    messaging.onMessage((payload) => {
+        console.log('Message received. ', payload);
+        alert(playload.notification.body);
+    });
+
+    function setTokenSentToServer(sent) {
+        window.localStorage.setItem('tiendamia_token_send', sent ? '1' : '0');
+    }
+
+    function sendTokenToServer(currentToken) {
+        if (!isTokenSentToServer()) {
+            new Ajax.request('/notification/ordernotification/save', {
+                parameters: {
+                    token: currentToken
+                },
+                onSuccess: function (response) {
+                    let data = JSON.parse(response.responseText);
+                    if (data.status) {
+                        console.log('Token added successfully');
+                        setTokenSentToServer(true);
+                    } else {
+                        console.log('An error occur adding the token');
+                    }
+                },
+                onFailure: function (errorResponse) {
+                    console.log('An error occur adding the token');
+                }
+            });
+        } else {
+            console.log('Token already sent to server so won\'t send it again ' +
+                'unless it changes');
+        }
+    }
+
+    function isTokenSentToServer() {
+        return window.localStorage.getItem('tiendamia_token_send') === '1';
+    }
+
+    function getToken() {
+
+        messaging.getToken().then((currentToken) => {
+            if (currentToken) {
+                sendTokenToServer(currentToken);
+            } else {
+                console.log('No Instance ID token available. Request permission to generate one.');
+                setTokenSentToServer(false);
+                requestPermission();
+            }
+        }).catch((err) => {
+            console.log('An error occurred while retrieving token. ', err);
+            setTokenSentToServer(false);
+        });
+    }
+
+    function requestPermission() {
+        console.log('Requesting permission...');
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+                getToken();
+            } else {
+                console.log('Unable to get permission to notify.');
+            }
+        });
+    }
+
+    let isLogged = '<?php echo Mage::getModel('customer/session')->isLoggedIn(); ?>';
+    if (isLogged) {
+        getToken();
+    }
+</script>
